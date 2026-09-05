@@ -10,7 +10,7 @@
 4. Production branch 选择 main。
 5. Framework preset 选择 None。
 6. Build command 留空。
-7. Build output directory 填 /。
+7. Build output directory 填英文句点：.
 8. 点击部署。
 
 ## 数据说明
