@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>日序 · Daily Order</title>
+  <style>
+    :root{font-family:Inter,"Microsoft YaHei",sans-serif;color:#25302b;background:#f5f4ef}
+    *{box-sizing:border-box}body{margin:0}.app{max-width:900px;margin:auto;padding:18px}
+    .head{display:flex;justify-content:space-between;align-items:center}h1{font-size:25px;margin:8px 0}
+    .sub{color:#768078;font-size:13px}.nav{display:flex;gap:7px;overflow:auto;padding:16px 0}
+    button,.tab,input,textarea{font:inherit}.tab,button{border:0;border-radius:12px;padding:10px 14px;cursor:pointer}
+    .tab{background:#e8e7e1;white-space:nowrap}.tab.on,.primary{background:#334b40;color:white}
+    .card{background:white;border:1px solid #e5e3dc;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 18px #26382d0b}
+    .row{display:flex;gap:9px}.row>*{flex:1}input,textarea{width:100%;padding:11px;border:1px solid #d8d7d0;border-radius:10px;background:#fff}
+    textarea{min-height:76px;resize:vertical}.item{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #eee}
+    .item:last-child{border:0}.item .text{flex:1}.item.done .text{text-decoration:line-through;color:#929892}
+    .danger{background:#f5e7e5;color:#9d3f38}.empty{text-align:center;color:#858b87;padding:28px}
+    @media(max-width:600px){.app{padding:13px}.row{display:block}.row>*{margin-bottom:8px}.head{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="head"><div><h1>日序 · Daily Order</h1><div class="sub">今日计划与工作台</div></div>
+      <input id="day" type="date" style="width:auto" onchange="loadItems()"></div>
+    <nav id="nav" class="nav"></nav>
+    <section class="card"><h2 id="heading"></h2>
+      <div class="row"><input id="title" placeholder="要做什么？"><textarea id="detail" placeholder="补充说明（可不填）"></textarea></div>
+      <button class="primary" onclick="addItem()">新增</button>
+    </section>
+    <section id="list" class="card"></section>
+  </main>
+  <script>
+    const sections={today:"今日",goals:"目标",review:"复盘",dev:"研发",manage:"管理",team:"团队"};
+    let section="today";
+    day.value=new Date().toISOString().slice(0,10);
+    function getItems(){return JSON.parse(localStorage.getItem("rixu_items")||"[]")}
+    function saveItems(items){localStorage.setItem("rixu_items",JSON.stringify(items))}
+    function renderNav(){
+      nav.innerHTML=Object.entries(sections).map(function(entry){
+        return '<button class="tab '+(entry[0]===section?'on':'')+'" onclick="choose(\''+entry[0]+'\')">'+entry[1]+'</button>';
+      }).join("");
+    }
+    function choose(next){section=next;renderNav();loadItems()}
+    function loadItems(){
+      heading.textContent=sections[section];
+      const rows=getItems().filter(function(item){return item.section===section&&item.date===day.value}).sort(function(a,b){return b.id-a.id});
+      list.innerHTML=rows.length?rows.map(function(item){
+        return '<div class="item '+(item.done?'done':'')+'"><input style="width:auto" type="checkbox" '+(item.done?'checked':'')+
+          ' onchange="toggleItem('+item.id+',this.checked)"><div class="text"><b>'+escapeHtml(item.title)+'</b><div class="sub">'+
+          escapeHtml(item.detail)+'</div></div><button class="danger" onclick="removeItem('+item.id+')">删除</button></div>';
+      }).join(""):'<div class="empty">这一天还没有内容。</div>';
+    }
+    function addItem(){
+      if(!title.value.trim())return alert("请填写内容");
+      const items=getItems();
+      items.push({id:Date.now(),section:section,title:title.value.trim(),detail:detail.value.trim(),date:day.value,done:false});
+      saveItems(items);title.value="";detail.value="";loadItems();
+    }
+    function toggleItem(id,done){const items=getItems();const item=items.find(function(row){return row.id===id});if(item)item.done=done;saveItems(items);loadItems()}
+    function removeItem(id){if(confirm("确定删除吗？")){saveItems(getItems().filter(function(item){return item.id!==id}));loadItems()}}
+    function escapeHtml(value){return String(value||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+    renderNav();loadItems();
+  </script>
+</body>
+</html>
